@@ -1,5 +1,3 @@
-
-
 let song;
 let fft;
 let imgs = [];
@@ -8,14 +6,14 @@ let audioInput;
 let imageInput;
 let isPlaying = false;
 
-let slider;  // Slider to seek through song
-let imageBoxDiv;  // New variable for image box div
-let imageBoxButton;  // New variable for image box button
+
+let slider;
+let imageBoxDiv;
+let imageBoxButton;
 
 function preload() {
   // Images will be loaded dynamically from the server
 }
-
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -52,17 +50,24 @@ function setup() {
   slider.position(20, 170);
   slider.input(seek);
 
-  // Button to toggle image box
   imageBoxButton = createButton('Show Image Box');
   imageBoxButton.position(20, 200);
   imageBoxButton.mousePressed(toggleImageBox);
 
-  // Create div to contain images and buttons
+  // New Record button
+  const recordButton = createButton('Start Recording');
+  recordButton.position(20, 230);
+  recordButton.mousePressed(startRecording);
+
+  // New End Recording button
+  const endRecordButton = createButton('End Recording');
+  endRecordButton.position(20, 260);
+  endRecordButton.mousePressed(endRecording);
+
   imageBoxDiv = createDiv('');
   imageBoxDiv.position(300, 20);
-  imageBoxDiv.hide();  // Hide the image box by default
+  imageBoxDiv.hide();
 
-  // Socket.io client code
   const socket = io.connect('http://localhost:3000');
   socket.on('imageFiles', function(data) {
     for (let i = 0; i < data.length; i++) {
@@ -74,17 +79,12 @@ function setup() {
   noLoop();
 }
 
+
 function draw() {
   background(0, 50);
 
   if (selectedImgIndex >= 0 && imgs[selectedImgIndex]) {
     image(imgs[selectedImgIndex], width / 2, height / 2, width, height);
-  }
-
-  if (isCapturing) {
-    let progress = map(capturedFrames, 0, maxFrames, 0, 200);
-    fill(255);
-    rect(width / 2, height / 2 - 10, progress, 20);
   }
 
   if (isPlaying) {
@@ -107,12 +107,34 @@ function draw() {
     }
   }
 
-  handleWebMExportInDraw();  // Call the function from webmExporter.js
+  handleWebMExportInDraw();
 
   if (song && song.isLoaded() && isPlaying) {
     slider.value(song.currentTime() / song.duration());
+    
+    if (isCapturing) {
+      if (song.currentTime() >= song.duration()) {
+        endRecording();
+      }
+    }
   }
 }
+
+function startRecording() {
+  if (!isCapturing && song && song.isLoaded()) {
+    handleCapture();
+    togglePlayPause();
+    isCapturing = true;
+  }
+}
+
+function endRecording() {
+  if (isCapturing) {
+    handleCapture();
+    isCapturing = false;
+  }
+}
+
 
 
 function seek() {
@@ -136,7 +158,6 @@ function togglePlayPause() {
     }
   }
 }
-
 function handleAudioFile(file) {
   if (file.type === 'audio') {
     if (song) {
@@ -144,9 +165,12 @@ function handleAudioFile(file) {
     }
     song = loadSound(file.data, () => {
       togglePlayPause();
+      maxFrames = Math.ceil(song.duration() * 60);  // Assuming 60 FPS
+      console.log(`Max frames set to ${maxFrames}`);
     });
   }
 }
+
 
 function handleImageSelection() {
   let selectedOption = imageInput.value();
