@@ -1,37 +1,51 @@
-// Initialize variables for WebM export
 let capturer;
-let isCapturing = false;
-let maxFrames = 300;
-let capturedFrames = 0;
+let isCapturing = false;  // Kept isCapturing here
+let isInitialized = false;
 
 function initializeCapturer() {
   try {
-    capturer = new CCapture({ 
-      format: 'webm', 
-      framerate: 60,
-      verbose: true 
-    });
+capturer = new CCapture({
+  format: 'webm', 
+  framerate: 60,
+  verbose: true
+});
     console.log("Capturer initialized");
+    isInitialized = true;
   } catch (error) {
     console.error("Error in initializeCapturer:", error);
+    isInitialized = false;
   }
 }
 
 function handleCapture() {
+    console.log(`isCapturing: ${isCapturing}, isInitialized: ${isInitialized}`);
+  
   try {
+    if (!isInitialized) {
+      console.error("Capturer is not initialized. Cannot start capturing.");
+      return;
+    }
     if (!isCapturing) {
       console.log("Capturer start");
       isCapturing = true;
       capturer.start();
-      setTimeout(() => { if (isCapturing) handleCapture(); }, 5000);  // Manually stop and save after 5 seconds
+      if (song && song.isLoaded()) {
+        song.jump(0);  // Start the song from the beginning
+        togglePlayPause();  // Play the song
+      }
       loop();
     } else {
-      console.log("Capturer stop");
-      isCapturing = false;
-      if (capturedFrames > 0) {
+      if (capturer) {  // Check if capturer is defined
+        console.log("Capturer stop");
+        isCapturing = false;
         capturer.stop();
         capturer.save();
         console.log("Capturer save invoked");
+      } else {
+        console.error("Capturer is undefined. Cannot stop capturing.");
+      }
+      if (song && song.isLoaded()) {
+        song.stop();  // Stop the song
       }
       noLoop();
     }
@@ -43,16 +57,10 @@ function handleCapture() {
 }
 
 
-// Function to handle WebM export in draw loop
 function handleWebMExportInDraw() {
   try {
     if (isCapturing) {
       capturer.capture(document.getElementById('defaultCanvas0'));
-      capturedFrames++;
-      console.log(`Captured frame ${capturedFrames}`);
-      if (capturedFrames >= maxFrames) {
-        handleCapture();
-      }
     }
   } catch (error) {
     console.error("Error in handleWebMExportInDraw:", error);
