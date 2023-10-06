@@ -79,7 +79,6 @@ function setup() {
   noLoop();
 }
 
-
 function draw() {
   background(0, 50);
 
@@ -112,6 +111,7 @@ function draw() {
   if (song && song.isLoaded() && isPlaying) {
     slider.value(song.currentTime() / song.duration());
     
+    // Automated 'End Recording'
     if (isCapturing) {
       if (song.currentTime() >= song.duration()) {
         endRecording();
@@ -123,10 +123,13 @@ function draw() {
 function startRecording() {
   if (!isCapturing && song && song.isLoaded()) {
     handleCapture();
-    togglePlayPause();
+    song.jump(0, function() {
+      togglePlayPause();  // Play the song only after it has jumped to the beginning
+    });
     isCapturing = true;
   }
 }
+
 
 function endRecording() {
   if (isCapturing) {
@@ -172,13 +175,6 @@ function handleAudioFile(file) {
 }
 
 
-function handleImageSelection() {
-  let selectedOption = imageInput.value();
-  if (selectedOption.startsWith('Image ')) {
-    selectedImgIndex = parseInt(selectedOption.split(' ')[1]) - 1;
-    redraw();
-  }
-}
 
 
 function uploadImage(file) {
