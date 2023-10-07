@@ -144,6 +144,7 @@ if (isPlaying) {
     endShape();
   }
 }
+}
 
 function startRecording() {
   if (!isCapturing && song && song.isLoaded()) {
