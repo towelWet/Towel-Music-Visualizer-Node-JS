@@ -164,62 +164,87 @@ function endRecording() {
 }
 
 
-
+// Function to seek through the audio track
 function seek() {
+  // Check if the 'song' object exists and is loaded
   if (song && song.isLoaded()) {
+    // Jump to the time in the song corresponding to the slider's value
+    // slider.value() returns a value between 0 and 1
+    // Multiply it by song.duration() to get the time in seconds
     song.jump(slider.value() * song.duration());
   }
 }
 
+// Function to toggle between play and pause states
 function togglePlayPause() {
+  // Check if the 'song' object exists and is loaded
   if (song && song.isLoaded()) {
+    // Check if the song is currently playing
     if (song.isPlaying()) {
+      // If it is, pause the song
       song.pause();
     } else {
+      // If it's not, play the song
       song.play();
     }
+    // Toggle the 'isPlaying' boolean variable
     isPlaying = !isPlaying;
+    
+    // If the song is playing, enable the draw loop
     if (isPlaying) {
       loop();
     } else {
+      // If the song is paused, disable the draw loop
       noLoop();
     }
   }
 }
+// Function to handle the uploaded audio file
 function handleAudioFile(file) {
+  // Check if the uploaded file is an audio file
   if (file.type === 'audio') {
+    // If a song is already loaded, stop it
     if (song) {
       song.stop();
     }
+    // Load the new audio file into the 'song' object
+    // The second argument is a callback function that gets executed once the file is loaded
     song = loadSound(file.data, () => {
+      // Play or pause the song
       togglePlayPause();
-      maxFrames = Math.ceil(song.duration() * 60);  // Assuming 60 FPS
+      // Calculate the maximum number of frames for the song duration, assuming 60 FPS
+      maxFrames = Math.ceil(song.duration() * 60);
+      // Log the maximum number of frames to the console
       console.log(`Max frames set to ${maxFrames}`);
     });
   }
 }
 
-
-
-
+// Function to handle the uploaded image file
 function uploadImage(file) {
+  // Check if the uploaded file is an image
   if (file.type.startsWith('image/')) {
+    // Create a FormData object to hold the file
     let formData = new FormData();
+    // Append the file to the FormData object
     formData.append('file', file.file);
+    // Make a POST request to upload the file
     fetch('/upload', {
       method: 'POST',
       body: formData
     })
-    .then(response => response.json())
+    .then(response => response.json())  // Parse the JSON response
     .then(data => {
-      // Refresh the image list
+      // Emit a socket event to refresh the list of images
       socket.emit('refreshImages');
     })
     .catch(error => {
+      // Log any errors to the console
       console.error('Error uploading file:', error);
     });
   }
 }
+
 
 function handleImageUpload(file) {
   console.log("File object type:", file.type);  // Debugging line
@@ -262,49 +287,67 @@ function handleImageUpload(file) {
 
 
 
-
+// Function to handle the selection of an image from the dropdown
 function handleImageSelection() {
+  // Get the value of the selected option in the dropdown
   let selectedOption = imageInput.value();
+  // Check if the selected option starts with the word 'Image'
   if (selectedOption.startsWith('Image ')) {
+    // Parse the index of the selected image and adjust it to zero-based indexing
     selectedImgIndex = parseInt(selectedOption.split(' ')[1]) - 1;
+    // Redraw the canvas to reflect the new image selection
     redraw();
   }
 }
 
-
+// Function to delete a selected file
 function deleteFile() {
+  // Get the select element by its ID
   const deleteSelect = select('#deleteSelect');
+  // Get the value of the selected option, which should be the file name
   const fileName = deleteSelect.value();
+  // Make a POST request to delete the file
   fetch('/delete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ fileName })
+    body: JSON.stringify({ fileName })  // Send the file name in the request body
   })
-  .then(response => response.json())
+  .then(response => response.json())  // Parse the JSON response
   .then(data => {
-    // Refresh the image list
+    // Emit a socket event to refresh the list of files
     socket.emit('refreshImages');
   })
   .catch(error => {
+    // Log any errors to the console
     console.error('Error deleting file:', error);
   });
 }
 
-// Particle class
+// Particle class definition
 class Particle {
+  // Constructor to initialize properties
   constructor() {
+    // Initialize position as a random 2D vector scaled by 250
     this.pos = p5.Vector.random2D().mult(250);
+    // Initialize velocity as a zero vector
     this.vel = createVector(0, 0);
+    // Initialize acceleration based on position and a random factor
     this.acc = this.pos.copy().mult(random(0.0001, 0.0001));
+    // Initialize width of the particle as a random value between 3 and 5
     this.w = random(3, 5);
+    // Initialize color as a random RGB value
     this.color = [random(200, 255), random(200, 255), random(200, 255)];
   }
 
+  // Update function to update particle's position and velocity
   update(cond) {
+    // Add acceleration to velocity
     this.vel.add(this.acc);
+    // Add velocity to position
     this.pos.add(this.vel);
+    // If condition 'cond' is true, add extra velocity to position
     if (cond) {
       this.pos.add(this.vel);
       this.pos.add(this.vel);
@@ -312,39 +355,57 @@ class Particle {
     }
   }
 
+  // Function to check if particle is out of canvas bounds
   edges() {
+    // Check if particle's x or y position is out of bounds
     if (this.pos.x < -width / 2 || this.pos.x > width / 2 ||
         this.pos.y < -height / 2 || this.pos.y > height / 2) {
-      return true;
+      return true;  // Return true if out of bounds
     } else {
-      return false;
+      return false;  // Return false if within bounds
     }
   }
 
+  // Function to display the particle
   show() {
+    // Disable stroke
     noStroke();
+    // Set fill color
     fill(this.color);
+    // Draw ellipse at particle's position with its width
     ellipse(this.pos.x, this.pos.y, this.w);
   }
 }
 
 
+// Function to display images on the UI
 function displayImages(imageFiles) {
+  // Create a div element to contain the images
   const imageContainer = createDiv();
+  // Set the position of the div element
   imageContainer.position(300, 20);
 
+  // Loop through each image file
   imageFiles.forEach((fileName, index) => {
+    // Create an image element and set its source
     const imgElem = createImg(`pictures/${fileName}`);
+    // Set the size of the image element
     imgElem.size(100, 100);
+    // Set the parent of the image element to the container div
     imgElem.parent(imageContainer);
 
+    // Create a delete button for each image
     const delButton = createButton('Delete');
+    // Set the parent of the delete button to the container div
     delButton.parent(imageContainer);
+    // Add a click event listener to the delete button
     delButton.mousePressed(() => deleteImage(fileName));
   });
 }
 
+// Function to delete an image
 function deleteImage(fileName) {
+  // Make a POST request to the '/delete' endpoint
   fetch('/delete', {
     method: 'POST',
     headers: {
@@ -354,44 +415,64 @@ function deleteImage(fileName) {
   })
   .then(response => response.json())
   .then(data => {
-    // Refresh the image list
+    // Emit a socket event to refresh the image list
     socket.emit('refreshImages');
-    // Reload the page to see changes
+    // Reload the page to reflect the changes
     window.location.reload(true);
   })
   .catch(error => {
+    // Log any errors to the console
     console.error('Error deleting file:', error);
   });
 }
 
 
+// Function to toggle the visibility of the image box
 function toggleImageBox() {
+  // Check if the image box is currently hidden
   if (imageBoxDiv.style('display') === 'none') {
+    // If hidden, call the function to display it
     displayImageBox();
   } else {
+    // If visible, call the function to hide it
     hideImageBox();
   }
 }
 
+// Function to hide the image box
 function hideImageBox() {
+  // Use the p5.js hide() method to hide the image box div
   imageBoxDiv.hide();
 }
 
+// Function to display the image box and populate it with images
 function displayImageBox() {
+  // Show the image box div
   imageBoxDiv.show();
-  imageBoxDiv.html(''); // Clear existing elements
+  
+  // Clear any existing elements in the image box
+  imageBoxDiv.html('');
 
+  // Fetch the list of images from the server
   fetch('/getImages')
     .then(response => response.json())
     .then(data => {
+      // Loop through each image file received from the server
       data.forEach((image, index) => {
+        // Create an image element for each image file
         let imgElement = createImg(`pictures/${image}`);
+        // Set the size of the image
         imgElement.size(100, 100);
+        // Set the parent of the image element to the image box div
         imgElement.parent(imageBoxDiv);
 
+        // Create a delete button for each image
         let deleteButton = createButton('Delete');
+        // Set the parent of the delete button to the image box div
         deleteButton.parent(imageBoxDiv);
+        // Add a mousePressed event to the delete button
         deleteButton.mousePressed(() => {
+          // Send a delete request to the server for the selected image
           fetch('/delete', {
             method: 'POST',
             headers: {
@@ -401,19 +482,23 @@ function displayImageBox() {
           })
           .then(response => response.json())
           .then(data => {
+            // If the delete was successful, remove the image and delete button elements
             if (data.success) {
               imgElement.remove();
               deleteButton.remove();
-              socket.emit('refreshImages');  // Refresh images, assuming you have socket defined
+              // Emit a refresh event to update the list of images (assuming socket is defined)
+              socket.emit('refreshImages');
             }
           })
           .catch(error => {
+            // Log any errors that occur during the delete process
             console.error('Error deleting file:', error);
           });
         });
       });
     })
     .catch(error => {
+      // Log any errors that occur during the fetch process
       console.error('Error fetching images:', error);
     });
 }
