@@ -79,44 +79,47 @@ function setup() {
   noLoop();
 }
 
+
 function draw() {
   background(0, 50);
 
-  if (selectedImgIndex >= 0 && imgs[selectedImgIndex]) {
-    image(imgs[selectedImgIndex], width / 2, height / 2, width, height);
-  }
+// Check if a valid image index is selected and the image exists in the array
+if (selectedImgIndex >= 0 && imgs[selectedImgIndex]) {
+  // Display the selected image centered on the canvas and scaled to canvas dimensions
+  image(imgs[selectedImgIndex], width / 2, height / 2, width, height);
+}
 
-  if (isPlaying) {
-    noFill();
-    stroke(255);
-    translate(width / 2, height / 2);
-    fft.analyze();
-    let wave = fft.waveform();
+// Check if the audio is currently playing
+if (isPlaying) {
+  // Set fill to transparent
+  noFill();
+  // Set stroke color to white
+  stroke(255);
+  // Translate the origin to the center of the canvas
+  translate(width / 2, height / 2);
+  // Analyze the current audio frame
+  fft.analyze();
+  // Get the waveform data
+  let wave = fft.waveform();
 
-    for (let t = -1; t <= 1; t += 2) {
-      beginShape();
-      for (let i = 0; i <= 180; i += 0.5) {
-        let index = floor(map(i, 0, 180, 0, wave.length - 1));
-        let r = map(wave[index], -1, 1, 150, 350);
-        let x = r * sin(i) * t;
-        let y = r * cos(i);
-        vertex(x, y);
-      }
-      endShape();
+  // Loop to draw the waveform mirrored across the Y-axis
+  for (let t = -1; t <= 1; t += 2) {
+    // Begin a new shape for the waveform
+    beginShape();
+    // Loop through 180 degrees to plot the waveform
+    for (let i = 0; i <= 180; i += 0.5) {
+      // Map the angle to an index in the waveform array
+      let index = floor(map(i, 0, 180, 0, wave.length - 1));
+      // Map the waveform value to a radius between 150 and 350
+      let r = map(wave[index], -1, 1, 150, 350);
+      // Calculate x and y coordinates based on the radius and angle
+      let x = r * sin(i) * t;
+      let y = r * cos(i);
+      // Add the vertex to the shape
+      vertex(x, y);
     }
-  }
-
-  handleWebMExportInDraw();
-
-  if (song && song.isLoaded() && isPlaying) {
-    slider.value(song.currentTime() / song.duration());
-    
-    // Automated 'End Recording'
-    if (isCapturing) {
-      if (song.currentTime() >= song.duration()) {
-        endRecording();
-      }
-    }
+    // End the shape
+    endShape();
   }
 }
 
