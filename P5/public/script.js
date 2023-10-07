@@ -16,59 +16,79 @@ function preload() {
 }
 
 function setup() {
+  // Set up the canvas to fill the entire window
   createCanvas(windowWidth, windowHeight);
+  
+  // Set the angle mode to degrees for trigonometric calculations
   angleMode(DEGREES);
+  
+  // Set the image drawing mode to center
   imageMode(CENTER);
+  
+  // Set the rectangle drawing mode to center
   rectMode(CENTER);
 
+  // Initialize the video capturer
   initializeCapturer();
 
+  // Initialize the Fast Fourier Transform object with a smoothing value of 0.2
   fft = new p5.FFT(0.2);
 
+  // Create an audio file input element and set its properties
   audioInput = createFileInput(handleAudioFile);
   audioInput.position(20, 20);
   audioInput.attribute('accept', 'audio/*');
 
+  // Create an image file input element and set its properties
   imageUploadInput = createFileInput(handleImageUpload);
   imageUploadInput.position(20, 80);
   imageUploadInput.attribute('accept', 'image/*');
 
+  // Create a dropdown for selecting images
   imageInput = createSelect();
   imageInput.position(20, 50);
   imageInput.option('Select an image');
   imageInput.changed(handleImageSelection);
 
+  // Create a Play/Pause button and set its properties
   const playPauseButton = createButton('Play/Pause');
   playPauseButton.position(20, 110);
   playPauseButton.mousePressed(togglePlayPause);
 
+  // Create an Export WebM button and set its properties
   const exportButton = createButton('Export WebM');
   exportButton.position(20, 140);
   exportButton.mousePressed(handleCapture);
 
+  // Create a slider for seeking through the audio
   slider = createSlider(0, 1, 0, 0.01);
   slider.position(20, 170);
   slider.input(seek);
 
+  // Create a button to toggle the image box visibility
   imageBoxButton = createButton('Show Image Box');
   imageBoxButton.position(20, 200);
   imageBoxButton.mousePressed(toggleImageBox);
 
-  // New Record button
+  // Create a Start Recording button
   const recordButton = createButton('Start Recording');
   recordButton.position(20, 230);
   recordButton.mousePressed(startRecording);
 
-  // New End Recording button
+  // Create an End Recording button
   const endRecordButton = createButton('End Recording');
   endRecordButton.position(20, 260);
   endRecordButton.mousePressed(endRecording);
 
+  // Create a div for the image box and hide it initially
   imageBoxDiv = createDiv('');
   imageBoxDiv.position(300, 20);
   imageBoxDiv.hide();
 
+  // Connect to the server via Socket.io
   const socket = io.connect('http://localhost:3000');
+  
+  // Listen for the 'imageFiles' event to load images
   socket.on('imageFiles', function(data) {
     for (let i = 0; i < data.length; i++) {
       imgs.push(loadImage(`pictures/${data[i]}`));
@@ -76,8 +96,10 @@ function setup() {
     }
   });
 
+  // Disable the draw loop initially
   noLoop();
 }
+
 
 
 function draw() {
