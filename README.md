@@ -98,3 +98,18 @@ Added debugging and setting dataOffset.
   
 - **Start and End Recording**: The 'Start Recording' button should set the time of the song to the very beginning.
 - The 'End Recording' should be automated as well, executing automatically when the song ends.
+
+## Ideal Start and End Recording 🌟
+
+  Start Recording:
+Check Conditions: Ensure that recording is not already in progress and that a song is available.
+Pause Current Playback: If the song is playing, pause it.
+Reset Song Position: Move the song's playback position to the beginning.
+Resume Playback: Start playing the song from the beginning.
+Initiate Video Capture: Begin capturing video and audio.
+
+  End Recording:
+Check Conditions: Ensure that recording is in progress.
+Monitor Song: Continuously check the song's playback position.
+Stop Capture: When the song reaches its end, automatically stop the video capture.
+Save Capture: Save the captured video.
