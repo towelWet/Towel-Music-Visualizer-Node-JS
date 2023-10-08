@@ -1,5 +1,3 @@
-// Declare variables for the capturer object and state flags
-let capturer;
 let isCapturing = false;  // Flag to indicate if capturing is in progress
 let isInitialized = false;  // Flag to indicate if the capturer is initialized
 
