@@ -1,12 +1,13 @@
+// Shared variable for the capturer object across multiple files
+let capturer = window.capturer || null;
+let isPlaying = false;
+let maxFrames;
 let song;
 let fft;
 let imgs = [];
 let selectedImgIndex = -1;
 let audioInput;
 let imageInput;
-let isPlaying = false;
-
-
 let slider;
 let imageBoxDiv;
 let imageBoxButton;
@@ -14,6 +15,7 @@ let imageBoxButton;
 function preload() {
   // Images will be loaded dynamically from the server
 }
+
 
 function setup() {
   // Set up the canvas to fill the entire window
@@ -28,8 +30,15 @@ function setup() {
   // Set the rectangle drawing mode to center
   rectMode(CENTER);
 
-  // Initialize the video capturer
-  initializeCapturer();
+  // Initialize the capturer with a frame rate of 30 FPS
+  capturer = new CCapture({ format: 'webm', framerate: 30 });
+  console.log("Capturer initialized");
+
+  // Set the maxFrames according to the video duration
+  const videoDuration = 10;  // 10 seconds
+  const frameRate = 30;  // 30 FPS
+  maxFrames = frameRate * videoDuration;
+  console.log("Max frames set to " + maxFrames);
 
   // Initialize the Fast Fourier Transform object with a smoothing value of 0.2
   fft = new p5.FFT(0.2);
@@ -101,50 +110,56 @@ function setup() {
 }
 
 
-
 function draw() {
   background(0, 50);
 
-// Check if a valid image index is selected and the image exists in the array
-if (selectedImgIndex >= 0 && imgs[selectedImgIndex]) {
-  // Display the selected image centered on the canvas and scaled to canvas dimensions
-  image(imgs[selectedImgIndex], width / 2, height / 2, width, height);
-}
+  // Check if a valid image index is selected and the image exists in the array
+  if (selectedImgIndex >= 0 && imgs[selectedImgIndex]) {
+    // Display the selected image centered on the canvas and scaled to canvas dimensions
+    image(imgs[selectedImgIndex], width / 2, height / 2, width, height);
+  }
 
-// Check if the audio is currently playing
-if (isPlaying) {
-  // Set fill to transparent
-  noFill();
-  // Set stroke color to white
-  stroke(255);
-  // Translate the origin to the center of the canvas
-  translate(width / 2, height / 2);
-  // Analyze the current audio frame
-  fft.analyze();
-  // Get the waveform data
-  let wave = fft.waveform();
+  // Check if the audio is currently playing
+  if (isPlaying) {
+    // Set fill to transparent
+    noFill();
+    // Set stroke color to white
+    stroke(255);
+    // Translate the origin to the center of the canvas
+    translate(width / 2, height / 2);
+    // Analyze the current audio frame
+    fft.analyze();
+    // Get the waveform data
+    let wave = fft.waveform();
 
-  // Loop to draw the waveform mirrored across the Y-axis
-  for (let t = -1; t <= 1; t += 2) {
-    // Begin a new shape for the waveform
-    beginShape();
-    // Loop through 180 degrees to plot the waveform
-    for (let i = 0; i <= 180; i += 0.5) {
-      // Map the angle to an index in the waveform array
-      let index = floor(map(i, 0, 180, 0, wave.length - 1));
-      // Map the waveform value to a radius between 150 and 350
-      let r = map(wave[index], -1, 1, 150, 350);
-      // Calculate x and y coordinates based on the radius and angle
-      let x = r * sin(i) * t;
-      let y = r * cos(i);
-      // Add the vertex to the shape
-      vertex(x, y);
+    // Loop to draw the waveform mirrored across the Y-axis
+    for (let t = -1; t <= 1; t += 2) {
+      // Begin a new shape for the waveform
+      beginShape();
+      // Loop through 180 degrees to plot the waveform
+      for (let i = 0; i <= 180; i += 0.5) {
+        // Map the angle to an index in the waveform array
+        let index = floor(map(i, 0, 180, 0, wave.length - 1));
+        // Map the waveform value to a radius between 150 and 350
+        let r = map(wave[index], -1, 1, 150, 350);
+        // Calculate x and y coordinates based on the radius and angle
+        let x = r * sin(i) * t;
+        let y = r * cos(i);
+        // Add the vertex to the shape
+        vertex(x, y);
+      }
+      // End the shape
+      endShape();
     }
-    // End the shape
-    endShape();
+  }
+
+  // Capture the frame
+  if (capturer) {
+    console.log("Capturing frame");
+    capturer.capture(document.getElementById('defaultCanvas0'));
   }
 }
-}
+
 
 function startRecording() {
   if (!isCapturing && song && song.isLoaded()) {
@@ -153,16 +168,27 @@ function startRecording() {
       togglePlayPause();  // Play the song only after it has jumped to the beginning
     });
     isCapturing = true;
+
+    // Start the capturer
+    capturer.start();
+    console.log("Capturer start");
   }
 }
-
 
 function endRecording() {
   if (isCapturing) {
     handleCapture();
     isCapturing = false;
+
+    // Add a 100ms delay before stopping the capturer
+    setTimeout(() => {
+      capturer.stop();
+      capturer.save();
+      console.log("Capturer stop and save invoked");
+    }, 100);
   }
 }
+
 
 
 // Function to seek through the audio track
