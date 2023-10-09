@@ -11,9 +11,25 @@ let imageInput;
 let slider;
 let imageBoxDiv;
 let imageBoxButton;
+let videoRecorder;
+let isVideoReady = false;  
+let videoBlob;  // Declare this at the top of your script.js file, outside of any functions
+
+// ... rest of your code ...
+
 
 function preload() {
   // Images will be loaded dynamically from the server
+}
+
+function showAndSaveVideo() {
+  let videoURL = videoRecorder.url;
+  let vid = createVideo(videoURL);
+  vid.showControls();
+  let fileName = prompt("Enter the name for your video file:", "myVideo");
+  if (fileName) {
+    videoRecorder.save(fileName);
+  }
 }
 
 
@@ -29,6 +45,21 @@ function setup() {
   
   // Set the rectangle drawing mode to center
   rectMode(CENTER);
+    
+
+  // Your existing setup code
+  videoRecorder = new p5.VideoRecorder();
+  videoRecorder.input = drawingContext.canvas; // Assuming you are drawing on canvas
+  videoRecorder.onFileReady = showAndSaveVideo; 
+
+  // Create buttons for starting and ending the recording
+  let startRecordingButton = createButton('Start Recording Audio Video');
+  startRecordingButton.position(10, 10);
+  startRecordingButton.mousePressed(startRecording);
+
+  let endRecordingButton = createButton('End Recording Audio Video');
+  endRecordingButton.position(200, 10);
+  endRecordingButton.mousePressed(endRecording);
 
   // Initialize the capturer with a frame rate of 30 FPS
   capturer = new CCapture({ format: 'webm', framerate: 30 });
@@ -152,15 +183,16 @@ function draw() {
       endShape();
     }
   }
-
+/*
   // Capture the frame
   if (capturer) {
     console.log("Capturing frame");
     capturer.capture(document.getElementById('defaultCanvas0'));
   }
+  */
 }
 
-
+/*
 function startRecording() {
   if (!isCapturing && song && song.isLoaded()) {
     handleCapture();
@@ -189,6 +221,30 @@ function endRecording() {
   }
 }
 
+*/
+
+function startRecording() {
+  if (!isCapturing && song && song.isLoaded()) {
+    handleCapture();
+    song.jump(0, function() {
+      togglePlayPause();  // Play the song only after it has jumped to the beginning
+    });
+    isCapturing = true;
+
+    // Start the videoRecorder
+    videoRecorder.start();
+    console.log("VideoRecorder start");
+  }
+}
+
+function endRecording() {
+  if (isCapturing) {
+    handleCapture();
+    isCapturing = false;
+    song.stop();
+    videoRecorder.stop();
+  }
+}
 
 
 // Function to seek through the audio track
