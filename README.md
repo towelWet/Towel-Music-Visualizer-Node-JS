@@ -21,6 +21,7 @@ Music-Visualizer/
 |   |-- CCapture.min.js
 |   |-- Music Visualizer.html
 |   |-- index.html
+|   |-- p5.videorecorder.js
 |   |-- p5.dom.min.js
 |   |-- p5.js
 |   |-- p5.min.js
