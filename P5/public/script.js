@@ -1,5 +1,5 @@
 // Shared variable for the capturer object across multiple files
-let capturer = window.capturer || null;
+// let capturer = window.capturer || null;
 let isPlaying = false;
 let maxFrames;
 let song;
@@ -12,123 +12,64 @@ let slider;
 let imageBoxDiv;
 let imageBoxButton;
 let videoRecorder;
-let isVideoReady = false;  
-let videoBlob;  // Declare this at the top of your script.js file, outside of any functions
-
-// ... rest of your code ...
-
+let isRecording = false;  // Variable to track recording state
+let videoFileName = "myVideo";  // Default video file name
 
 function preload() {
   // Images will be loaded dynamically from the server
 }
 
-function showAndSaveVideo() {
-  let videoURL = videoRecorder.url;
-  let vid = createVideo(videoURL);
-  vid.showControls();
-  let fileName = prompt("Enter the name for your video file:", "myVideo");
-  if (fileName) {
-    videoRecorder.save(fileName);
-  }
-}
 
 
 function setup() {
-  // Set up the canvas to fill the entire window
   createCanvas(windowWidth, windowHeight);
-  
-  // Set the angle mode to degrees for trigonometric calculations
+
   angleMode(DEGREES);
-  
-  // Set the image drawing mode to center
   imageMode(CENTER);
-  
-  // Set the rectangle drawing mode to center
   rectMode(CENTER);
     
+    
+  const startRecButton = createButton('Start Recording');
+  startRecButton.position(20, 230);
+  startRecButton.mousePressed(startRecording);
 
-  // Your existing setup code
-  videoRecorder = new p5.VideoRecorder();
-  videoRecorder.input = drawingContext.canvas; // Assuming you are drawing on canvas
-  videoRecorder.onFileReady = showAndSaveVideo; 
+  const stopRecButton = createButton('Stop Recording');
+  stopRecButton.position(20, 260);
+  stopRecButton.mousePressed(stopRecording);
 
-  // Create buttons for starting and ending the recording
-  let startRecordingButton = createButton('Start Recording Audio Video');
-  startRecordingButton.position(10, 10);
-  startRecordingButton.mousePressed(startRecording);
-
-  let endRecordingButton = createButton('End Recording Audio Video');
-  endRecordingButton.position(200, 10);
-  endRecordingButton.mousePressed(endRecording);
-
-  // Initialize the capturer with a frame rate of 30 FPS
-  capturer = new CCapture({ format: 'webm', framerate: 30 });
-  console.log("Capturer initialized");
-
-  // Set the maxFrames according to the video duration
-  const videoDuration = 10;  // 10 seconds
-  const frameRate = 30;  // 30 FPS
-  maxFrames = frameRate * videoDuration;
-  console.log("Max frames set to " + maxFrames);
-
-  // Initialize the Fast Fourier Transform object with a smoothing value of 0.2
   fft = new p5.FFT(0.2);
 
-  // Create an audio file input element and set its properties
   audioInput = createFileInput(handleAudioFile);
   audioInput.position(20, 20);
   audioInput.attribute('accept', 'audio/*');
 
-  // Create an image file input element and set its properties
   imageUploadInput = createFileInput(handleImageUpload);
   imageUploadInput.position(20, 80);
   imageUploadInput.attribute('accept', 'image/*');
 
-  // Create a dropdown for selecting images
   imageInput = createSelect();
   imageInput.position(20, 50);
   imageInput.option('Select an image');
   imageInput.changed(handleImageSelection);
 
-  // Create a Play/Pause button and set its properties
   const playPauseButton = createButton('Play/Pause');
   playPauseButton.position(20, 110);
   playPauseButton.mousePressed(togglePlayPause);
 
-  // Create an Export WebM button and set its properties
-  const exportButton = createButton('Export WebM');
-  exportButton.position(20, 140);
-  exportButton.mousePressed(handleCapture);
-
-  // Create a slider for seeking through the audio
   slider = createSlider(0, 1, 0, 0.01);
   slider.position(20, 170);
   slider.input(seek);
 
-  // Create a button to toggle the image box visibility
   imageBoxButton = createButton('Show Image Box');
   imageBoxButton.position(20, 200);
   imageBoxButton.mousePressed(toggleImageBox);
 
-  // Create a Start Recording button
-  const recordButton = createButton('Start Recording');
-  recordButton.position(20, 230);
-  recordButton.mousePressed(startRecording);
-
-  // Create an End Recording button
-  const endRecordButton = createButton('End Recording');
-  endRecordButton.position(20, 260);
-  endRecordButton.mousePressed(endRecording);
-
-  // Create a div for the image box and hide it initially
   imageBoxDiv = createDiv('');
   imageBoxDiv.position(300, 20);
   imageBoxDiv.hide();
 
-  // Connect to the server via Socket.io
   const socket = io.connect('http://localhost:3000');
   
-  // Listen for the 'imageFiles' event to load images
   socket.on('imageFiles', function(data) {
     for (let i = 0; i < data.length; i++) {
       imgs.push(loadImage(`pictures/${data[i]}`));
@@ -136,8 +77,15 @@ function setup() {
     }
   });
 
-  // Disable the draw loop initially
   noLoop();
+    
+      //  Create a new VideoRecorder instance
+  //    defaults to recording the canvas
+  videoRecorder = new p5.VideoRecorder();
+  //  Set callback for when recording is completed
+  //    and video file has been created
+  videoRecorder.onFileReady = showAndSaveVideo;
+    
 }
 
 
@@ -192,6 +140,7 @@ function draw() {
   */
 }
 
+
 /*
 function startRecording() {
   if (!isCapturing && song && song.isLoaded()) {
@@ -220,31 +169,55 @@ function endRecording() {
     }, 100);
   }
 }
-
 */
 
+
 function startRecording() {
-  if (!isCapturing && song && song.isLoaded()) {
-    handleCapture();
-    song.jump(0, function() {
-      togglePlayPause();  // Play the song only after it has jumped to the beginning
-    });
-    isCapturing = true;
-
-    // Start the videoRecorder
+  if (song && song.isLoaded()) {
+    // Stop the song if it's playing
+    if (song.isPlaying()) {
+      song.stop();
+    }
+    // Jump to the beginning of the song
+    song.jump(0);
+    // Play the song
+    song.play();
+    // Start recording
     videoRecorder.start();
-    console.log("VideoRecorder start");
+    console.log("Video recording started");
+    isRecording = true;
   }
 }
 
-function endRecording() {
-  if (isCapturing) {
-    handleCapture();
-    isCapturing = false;
-    song.stop();
+
+function stopRecording() {
+  if (isRecording) {
+    // Stop the song
+    if (song.isPlaying()) {
+      song.pause();
+    }
+    // Stop recording
     videoRecorder.stop();
+    // Save the video with a dynamic name
+    videoRecorder.save(videoFileName + "_" + new Date().toISOString());
+    console.log("Video recording stopped and saved");
+    isRecording = false;
   }
 }
+
+function showAndSaveVideo() {
+  // Get URL of recorded video
+  let videoURL = videoRecorder.url;
+  // Create video player element with recording as source
+  let vid = createVideo(videoURL);
+  vid.showControls();
+  // Download the recording with a dynamic name
+  videoRecorder.save(videoFileName + "_" + new Date().toISOString());
+  console.log("Video recording stopped and saved");
+}
+
+
+
 
 
 // Function to seek through the audio track
