@@ -186,8 +186,12 @@ function startRecording() {
     videoRecorder.start();
     console.log("Video recording started");
     isRecording = true;
+
+    // Automatically stop recording after the duration of the song (in milliseconds)
+    setTimeout(stopRecording, song.duration() * 1000);
   }
 }
+
 
 
 function stopRecording() {
