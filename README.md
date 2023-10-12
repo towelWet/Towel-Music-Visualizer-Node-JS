@@ -92,15 +92,7 @@ Handles the WebM video capturing functionality.
 Modified library for WebM video writing. 
 Added debugging and setting dataOffset.
 
-## Issues 🐛
-
-- **Dynamic Frame Capture**: Currently, the frame capture stops after 600 frames.
-- This should be dynamic, adjusting to the duration of the song.
-  
-- **Start and End Recording**: The 'Start Recording' button should set the time of the song to the very beginning.
-- The 'End Recording' should be automated as well, executing automatically when the song ends.
-
-## Ideal Start and End Recording 🌟
+## Start and End Recording Logic 🌟
 
   Start Recording:
 Check Conditions: Ensure that recording is not already in progress and that a song is available.
@@ -112,5 +104,32 @@ Initiate Video Capture: Begin capturing video and audio.
   End Recording:
 Check Conditions: Ensure that recording is in progress.
 Monitor Song: Continuously check the song's playback position.
+
+
+
+
+### Compile macOS Executable Using Platypus 🍏
+
+1️⃣ Download and install [Platypus](https://sveinbjorn.org/platypus).  
+2️⃣ Open Platypus and fill in the app details.  
+3️⃣ For the script, include the following Bash script:
+
+```bash
+#!/bin/bash
+cd "$(dirname "$0")"
+npm install
+node server.js
+```
+
+4️⃣ In the "Files to be bundled" section, include the following files and folders:
+- `server.js`
+- `package.json`
+- `public/`
+- `node_modules/` (optional, can be installed via script)
+
+5️⃣ Click "Create" to generate the `.app` file.  
+6️⃣ Double-click the generated `.app` file to run the server.  
+7️⃣ Open your browser and go to http://localhost:3000.
+
 Stop Capture: When the song reaches its end, automatically stop the video capture.
 Save Capture: Save the captured video.
