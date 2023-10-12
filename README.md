@@ -117,9 +117,21 @@ Monitor Song: Continuously check the song's playback position.
 
 ```bash
 #!/bin/bash
-cd "$(dirname "$0")"
-npm install
-node server.js
+# Get the directory of the currently executing script
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Navigate to your project directory (assuming the script is in the project directory)
+cd "$DIR"
+
+# Install dependencies and start the server using full paths to npm and node
+/usr/local/bin/npm install
+/usr/local/bin/node server.js &
+
+# Wait for the server to start
+sleep 2
+
+# Open the browser
+open http://localhost:3000
 ```
 
 4️⃣ In the "Files to be bundled" section, include the following files and folders:
