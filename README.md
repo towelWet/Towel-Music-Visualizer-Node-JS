@@ -132,6 +132,3 @@ node server.js
 5️⃣ Click "Create" to generate the `.app` file.  
 6️⃣ Double-click the generated `.app` file to run the server.  
 7️⃣ Open your browser and go to http://localhost:3000.
-
-Stop Capture: When the song reaches its end, automatically stop the video capture.
-Save Capture: Save the captured video.
