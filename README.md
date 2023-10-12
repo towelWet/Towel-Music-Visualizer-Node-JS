@@ -127,7 +127,7 @@ node server.js
 - `package.json`
 - `public/`
 - `node_modules/` (optional, can be installed via script)
-- `start_app.sh'
+- `start_app.sh`
 
 5️⃣ Click "Create" to generate the `.app` file.  
 6️⃣ Double-click the generated `.app` file to run the server.  
