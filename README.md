@@ -29,6 +29,7 @@ Music-Visualizer/
 |   |-- p5.sound.js.map
 |   |-- p5.sound.min.js
 |   |-- p5.sound.min.js.map
+|   |-- start_app.sh
 |   |-- pictures/
 |   |-- script.js
 |   |-- style.css
@@ -126,6 +127,7 @@ node server.js
 - `package.json`
 - `public/`
 - `node_modules/` (optional, can be installed via script)
+- `start_app.sh'
 
 5️⃣ Click "Create" to generate the `.app` file.  
 6️⃣ Double-click the generated `.app` file to run the server.  
