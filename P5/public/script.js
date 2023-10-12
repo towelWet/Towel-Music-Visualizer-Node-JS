@@ -14,6 +14,9 @@ let imageBoxButton;
 let videoRecorder;
 let isRecording = false;  // Variable to track recording state
 let videoFileName = "myVideo";  // Default video file name
+let canvas;  // Declare a variable to hold the canvas object
+let colorPicker;
+
 
 function preload() {
   // Images will be loaded dynamically from the server
@@ -22,8 +25,32 @@ function preload() {
 
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+    
+      // Initialize socket at the beginning of setup
+  const socket = io.connect('http://localhost:3000');
 
+    
+  createCanvas(1280, 720); // Set your canvas size
+  // Set the canvas background to transparent
+  clear();
+
+  // Create a dropdown for resolution selection
+  resolutionSelect = createSelect();
+  resolutionSelect.position(20, 290);
+  resolutionSelect.option('720p (16:9)');
+  resolutionSelect.option('1080p (16:9)');
+  resolutionSelect.option('720x1280 (9:16)');
+  resolutionSelect.option('1080x1920 (9:16)');
+  resolutionSelect.changed(changeResolution);
+    
+
+  // Create a new VideoRecorder instance with "webm" format
+  videoRecorder = new p5.VideoRecorder(canvas, "webm");
+  videoRecorder.onFileReady = showAndSaveVideo;  // Add this line
+    
+  colorPicker = createColorPicker('#ffffff');  // Default color is white
+  colorPicker.position(20, 320);
+ 
   angleMode(DEGREES);
   imageMode(CENTER);
   rectMode(CENTER);
@@ -42,10 +69,31 @@ function setup() {
   audioInput = createFileInput(handleAudioFile);
   audioInput.position(20, 20);
   audioInput.attribute('accept', 'audio/*');
-
   imageUploadInput = createFileInput(handleImageUpload);
   imageUploadInput.position(20, 80);
   imageUploadInput.attribute('accept', 'image/*');
+
+// Now it's safe to use socket
+socket.on('imageFiles', function(data) {
+  // Clear existing options
+  imageInput.elt.options.length = 0;
+
+  // Add 'Clear Background' option
+  imageInput.option('Clear Background');
+
+  // Add 'Select an image' option
+  imageInput.option('Select an image');
+
+  // Clear the imgs array to avoid duplicates
+  imgs.length = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    imgs.push(loadImage(`pictures/${data[i]}`));
+    imageInput.option(`Image ${i + 1}`);
+  }
+});
+
+
 
   imageInput = createSelect();
   imageInput.position(20, 50);
@@ -68,29 +116,34 @@ function setup() {
   imageBoxDiv.position(300, 20);
   imageBoxDiv.hide();
 
-  const socket = io.connect('http://localhost:3000');
-  
-  socket.on('imageFiles', function(data) {
-    for (let i = 0; i < data.length; i++) {
-      imgs.push(loadImage(`pictures/${data[i]}`));
-      imageInput.option(`Image ${i + 1}`);
-    }
-  });
-
   noLoop();
-    
-      //  Create a new VideoRecorder instance
-  //    defaults to recording the canvas
-  videoRecorder = new p5.VideoRecorder();
-  //  Set callback for when recording is completed
-  //    and video file has been created
-  videoRecorder.onFileReady = showAndSaveVideo;
-    
+}
+
+function changeResolution() {
+  const selectedResolution = resolutionSelect.value();
+  switch (selectedResolution) {
+    case '720p (16:9)':
+      resizeCanvas(1280, 720);
+      break;
+    case '1080p (16:9)':
+      resizeCanvas(1920, 1080);
+      break;
+    case '720x1280 (9:16)':
+      resizeCanvas(720, 1280);
+      break;
+    case '1080x1920 (9:16)':
+      resizeCanvas(1080, 1920);
+      break;
+    default:
+      break;
+  }
+  centerCanvas();  // Re-center the canvas after resizing
 }
 
 
 function draw() {
-  background(0, 50);
+  // Clear the canvas with a transparent background
+  clear();
 
   // Check if a valid image index is selected and the image exists in the array
   if (selectedImgIndex >= 0 && imgs[selectedImgIndex]) {
@@ -101,9 +154,11 @@ function draw() {
   // Check if the audio is currently playing
   if (isPlaying) {
     // Set fill to transparent
-    noFill();
+    noFill();    
+    // Set stroke color to the selected color
+    stroke(colorPicker.color()); 
     // Set stroke color to white
-    stroke(255);
+   // stroke(255);
     // Translate the origin to the center of the canvas
     translate(width / 2, height / 2);
     // Analyze the current audio frame
@@ -131,6 +186,14 @@ function draw() {
       endShape();
     }
   }
+
+
+}
+
+    
+    
+    
+    
 /*
   // Capture the frame
   if (capturer) {
@@ -138,7 +201,7 @@ function draw() {
     capturer.capture(document.getElementById('defaultCanvas0'));
   }
   */
-}
+
 
 
 /*
@@ -172,42 +235,49 @@ function endRecording() {
 */
 
 
-function startRecording() {
-  if (song && song.isLoaded()) {
-    // Stop the song if it's playing
-    if (song.isPlaying()) {
-      song.stop();
-    }
-    // Jump to the beginning of the song
-    song.jump(0);
-    // Play the song
-    song.play();
-    // Start recording
-    videoRecorder.start();
-    console.log("Video recording started");
-    isRecording = true;
-
-    // Automatically stop recording after the duration of the song (in milliseconds)
-    setTimeout(stopRecording, song.duration() * 1000);
+function centerCanvas() {
+  if (canvas) {
+    let x = (windowWidth - width) / 2;
+    let y = (windowHeight - height) / 2;
+    canvas.position(x, y);
   }
 }
 
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  centerCanvas();
+}
 
+
+
+function startRecording() {
+  if (song && song.isLoaded() && !isRecording) {  // Check isRecording
+    console.log("Starting recording...");  // Debugging
+    if (song.isPlaying()) {  // Check if the song is already playing
+      song.stop();  // Stop the song if it's playing
+    }
+    song.jump(0);  // Jump to the beginning of the song
+    song.play();  // Play the song
+    videoRecorder.start();  // Start the video recorder
+    isRecording = true;  // Set the recording flag to true
+    setTimeout(stopRecording, song.duration() * 1000);  // Stop recording after the song duration
+  }
+}
 
 function stopRecording() {
-  if (isRecording) {
-    // Stop the song
-    if (song.isPlaying()) {
-      song.pause();
+  if (isRecording) {  // Check isRecording
+    console.log("Stopping recording...");  // Debugging
+    if (song.isPlaying()) {  // Check if the song is playing
+      song.stop();  // Stop the song
     }
-    // Stop recording
-    videoRecorder.stop();
-    // Save the video with a dynamic name
-    videoRecorder.save(videoFileName + "_" + new Date().toISOString());
-    console.log("Video recording stopped and saved");
-    isRecording = false;
+    videoRecorder.stop();  // Stop the video recorder
+    isRecording = false;  // Set the recording flag to false
   }
 }
+
+
+
+
 
 function showAndSaveVideo() {
   // Get URL of recorded video
@@ -351,14 +421,21 @@ function handleImageUpload(file) {
 function handleImageSelection() {
   // Get the value of the selected option in the dropdown
   let selectedOption = imageInput.value();
+  
+  // Check if the selected option is "Clear Background"
+  if (selectedOption === 'Clear Background') {
+    selectedImgIndex = -1;  // Set to -1 to indicate no image should be displayed
+  }
   // Check if the selected option starts with the word 'Image'
-  if (selectedOption.startsWith('Image ')) {
+  else if (selectedOption.startsWith('Image ')) {
     // Parse the index of the selected image and adjust it to zero-based indexing
     selectedImgIndex = parseInt(selectedOption.split(' ')[1]) - 1;
-    // Redraw the canvas to reflect the new image selection
-    redraw();
   }
+  
+  // Redraw the canvas to reflect the new image selection
+  redraw();
 }
+
 
 // Function to delete a selected file
 function deleteFile() {
