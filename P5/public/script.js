@@ -16,6 +16,9 @@ let isRecording = false;  // Variable to track recording state
 let videoFileName = "myVideo";  // Default video file name
 let canvas;  // Declare a variable to hold the canvas object
 let colorPicker;
+// Declare socket variable at the top of your script
+let socket;
+
 
 
 function preload() {
@@ -26,9 +29,10 @@ function preload() {
 
 function setup() {
     
-      // Initialize socket at the beginning of setup
-  const socket = io.connect('http://localhost:3000');
+// Initialize socket at the beginning of setup
+socket = io.connect('http://localhost:3000');
 
+  loadState();
     
   createCanvas(1280, 720); // Set your canvas size
   // Set the canvas background to transparent
@@ -43,6 +47,17 @@ function setup() {
   resolutionSelect.option('1080x1920 (9:16)');
   resolutionSelect.changed(changeResolution);
     
+    
+const clearSettingsButton = createButton('Reset Project');
+clearSettingsButton.position(20, 350); // Adjust position as needed
+clearSettingsButton.mousePressed(() => {
+  const isSure = window.confirm("Are you sure? This will erase all saved settings.");
+  if (isSure) {
+    localStorage.removeItem('settingsState');
+    window.location.reload();
+  }
+});
+    
 
   // Create a new VideoRecorder instance with "webm" format
   videoRecorder = new p5.VideoRecorder(canvas, "webm");
@@ -55,6 +70,11 @@ function setup() {
   imageMode(CENTER);
   rectMode(CENTER);
     
+    /*
+  let refreshButton = createButton('Refresh');
+  refreshButton.position(200, 10); // Adjust position as needed
+  refreshButton.mousePressed(refreshImageDropdown);
+    */
     
   const startRecButton = createButton('Start Recording');
   startRecButton.position(20, 230);
@@ -138,7 +158,9 @@ function changeResolution() {
       break;
   }
   centerCanvas();  // Re-center the canvas after resizing
+  saveState();
 }
+
 
 
 function draw() {
@@ -192,7 +214,26 @@ function draw() {
 
     
     
-    
+    function saveState() {
+  const state = {
+    selectedResolution: resolutionSelect.value(),
+    selectedColor: colorPicker.color().toString(),
+    // Add other settings here
+  };
+  localStorage.setItem('settingsState', JSON.stringify(state));
+}
+
+
+function loadState() {
+  const savedState = localStorage.getItem('settingsState');
+  if (savedState) {
+    const state = JSON.parse(savedState);
+    resolutionSelect.selected(state.selectedResolution);
+    colorPicker.color(state.selectedColor);
+    // Load other settings here
+  }
+}
+
     
 /*
   // Capture the frame
@@ -513,6 +554,25 @@ class Particle {
     ellipse(this.pos.x, this.pos.y, this.w);
   }
 }
+
+// Add this function to refresh the image dropdown
+async function refreshImageDropdown() {
+  let dropdown = document.getElementById("imageInput");  // Use the correct ID
+  if (dropdown) {  // Check if dropdown is not null
+    dropdown.innerHTML = "";
+    const response = await fetch('/getImages');
+    const imageList = await response.json();
+    for (let img of imageList) {
+      let option = document.createElement("option");
+      option.text = img;
+      option.value = img;
+      dropdown.add(option);
+    }
+  } else {
+    console.error("Dropdown element not found");  // Debugging line
+  }
+}
+
 
 
 // Function to display images on the UI
