@@ -144,3 +144,13 @@ open http://localhost:3000
 5️⃣ Click "Create" to generate the `.app` file.  
 6️⃣ Double-click the generated `.app` file to run the server.  
 7️⃣ The app will open your browser automatically and go to http://localhost:3000.
+
+
+
+
+
+
+YOU MAY HAVE TO
+### chmod +x+rw start_app.sh
+IF YOU HAVE PERMISSION PROBLEMS
+
