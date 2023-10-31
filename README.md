@@ -44,6 +44,8 @@ Music-Visualizer/
 3. Run `node server.js` to start the server.
 4. Open your browser and go to `http://localhost:3000`.
 
+5. YOU MAY HAVE TO RUN **chmod +x+rw start_app.sh** IN TERMINAL TO GET TO WORK
+
 ## Features 🌟
 
 - **Audio Upload**: Upload your audio files to visualize.
@@ -150,7 +152,4 @@ open http://localhost:3000
 
 
 
-YOU MAY HAVE TO
-### chmod +x+rw start_app.sh
-IF YOU HAVE PERMISSION PROBLEMS
 
